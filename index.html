@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>后台管理系统 · 数据看板示例</title>
+<style>
+  :root{
+    --side:#1f2937; --side-fg:#c9d1d9; --side-on:#2563eb;
+    --bg:#f4f6f9; --card:#fff; --fg:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --blue:#2563eb; --green:#10b981; --orange:#f59e0b; --red:#ef4444; --purple:#8b5cf6;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    display:flex; min-height:100vh;
+  }
+  aside{
+    width:210px;flex:none;background:var(--side);color:var(--side-fg);
+    display:flex;flex-direction:column;padding:0 0 16px;
+  }
+  .brand{
+    height:60px;display:flex;align-items:center;gap:9px;padding:0 18px;
+    color:#fff;font-weight:600;font-size:16px;border-bottom:1px solid rgba(255,255,255,.08)
+  }
+  .brand i{width:22px;height:22px;border-radius:6px;background:var(--blue);display:inline-block}
+  nav{margin-top:10px;flex:1}
+  nav button{
+    width:100%;text-align:left;background:none;border:0;color:var(--side-fg);
+    padding:11px 18px;font-size:14.5px;cursor:pointer;font-family:inherit;
+    display:flex;align-items:center;gap:10px;border-left:3px solid transparent;
+  }
+  nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+  nav button.on{background:rgba(37,99,235,.22);color:#fff;border-left-color:var(--blue)}
+  nav .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6}
+  .side-foot{padding:12px 18px;color:#8b949e;font-size:12px;border-top:1px solid rgba(255,255,255,.08)}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  header{
+    height:60px;background:var(--card);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex:none
+  }
+  header h1{font-size:16px;margin:0;font-weight:600}
+  header .crumb{color:var(--muted);font-size:13px;font-weight:400;margin-left:8px}
+  .user{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+
+  main{flex:1;padding:18px;overflow:auto}
+  .grid{display:grid;gap:14px}
+  .kpis{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:900px){ .kpis{grid-template-columns:repeat(2,1fr)} }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .kpi .label{color:var(--muted);font-size:13px}
+  .kpi .val{font-size:26px;font-weight:600;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+  .kpi .sub{font-size:12.5px;color:var(--muted)}
+  .up{color:var(--green)} .down{color:var(--red)}
+  .charts{grid-template-columns:2fr 1fr;margin-top:14px}
+  @media (max-width:900px){ .charts{grid-template-columns:1fr} }
+  .card h2{font-size:15px;margin:0 0 12px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .card h2 span{font-weight:400;color:var(--muted);font-size:12.5px}
+
+  .bars{display:flex;flex-direction:column;gap:12px}
+  .bar{display:grid;grid-template-columns:72px 1fr 52px;align-items:center;gap:10px;font-size:13px}
+  .track{height:9px;border-radius:99px;background:#eef1f5;overflow:hidden}
+  .track i{display:block;height:100%;border-radius:99px}
+  .bar b{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  input[type=search],select{
+    padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--fg);
+    font-size:14px;font-family:inherit;outline:none
+  }
+  input[type=search]{min-width:190px}
+  input[type=search]:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+  .btn{
+    padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--fg);
+    font-size:14px;cursor:pointer;font-family:inherit
+  }
+  .btn:hover{border-color:#cbd5e1}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.danger{color:var(--red);border-color:#fecaca;background:#fef2f2}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .spacer{flex:1}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:11px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:500;font-size:13px;cursor:pointer;user-select:none}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody tr:hover{background:#fafbfc}
+  .tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12.5px}
+  .t-待付款{background:#fff7ed;color:#b45309}
+  .t-已发货{background:#eff6ff;color:#1d4ed8}
+  .t-已完成{background:#ecfdf5;color:#047857}
+  .t-已取消{background:#f3f4f6;color:#6b7280}
+  .pager{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:12px;color:var(--muted);font-size:13px}
+  .pager button{padding:5px 11px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer}
+  .pager button:disabled{opacity:.45;cursor:not-allowed}
+  .empty{color:var(--muted);text-align:center;padding:34px 0}
+  .placeholder{padding:40px 10px;text-align:center;color:var(--muted)}
+  .placeholder b{display:block;color:var(--fg);font-size:16px;margin-bottom:6px}
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);
+    background:#111827;color:#fff;padding:9px 16px;border-radius:99px;font-size:14px;
+    opacity:0;pointer-events:none;transition:.2s;z-index:20
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  .note{color:var(--muted);font-size:12.5px;margin-top:10px;line-height:1.7}
+  @media (max-width:760px){
+    body{flex-direction:column}
+    aside{width:100%;flex-direction:row;overflow-x:auto;padding:0}
+    .brand{display:none}
+    nav{display:flex;margin:0}
+    nav button{border-left:0;border-bottom:3px solid transparent;white-space:nowrap;padding:12px 14px}
+    nav button.on{border-left:0;border-bottom-color:var(--blue)}
+    .side-foot{display:none}
+    table{font-size:13px}
+    th:nth-child(3),td:nth-child(3){display:none}
+  }
+</style>
+</head>
+<body>
+<aside>
+  <div class="brand"><i></i>经营管理后台</div>
+  <nav id="nav">
+    <button data-view="dash" class="on"><span class="dot"></span>数据看板</button>
+    <button data-view="orders"><span class="dot"></span>订单管理</button>
+    <button data-view="goods"><span class="dot"></span>商品管理</button>
+    <button data-view="customers"><span class="dot"></span>客户管理</button>
+    <button data-view="stock"><span class="dot"></span>库存管理</button>
+    <button data-view="settings"><span class="dot"></span>系统设置</button>
+  </nav>
+  <div class="side-foot">示例项目 · 数据为模拟数据</div>
+</aside>
+
+<div class="main">
+  <header>
+    <div><h1 id="title">数据看板</h1><span class="crumb" id="crumb">首页 / 数据看板</span></div>
+    <div class="user"><span>管理员</span><div class="avatar">管</div></div>
+  </header>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  /* ---------- 模拟数据 ---------- */
+  var GOODS = ["办公椅", "机械键盘", "显示器支架", "无线鼠标", "打印纸", "文件柜", "路由器", "碎纸机", "白板", "U 盘"];
+  var CUSTOMERS = ["恒信科技", "蓝海贸易", "启明电子", "万隆实业", "云图网络", "汇科材料", "亦禾文化", "正阳物流"];
+  var STATUS = ["待付款", "已发货", "已完成", "已取消"];
+
+  function rnd(seed) { // 可复现的伪随机
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
+  var seed = 7;
+  function next() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+
+  var orders = [];
+  for (var i = 0; i < 68; i++) {
+    var amount = Math.round((180 + next() * 9000) * 100) / 100;
+    var d = new Date(2026, 8, 30);
+    d.setDate(d.getDate() - Math.floor(next() * 27));
+    orders.push({
+      no: "SO" + (202609000 + i + 1),
+      customer: CUSTOMERS[Math.floor(next() * CUSTOMERS.length)],
+      goods: GOODS[Math.floor(next() * GOODS.length)],
+      amount: amount,
+      status: STATUS[Math.floor(next() * STATUS.length)],
+      date: d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0")
+    });
+  }
+
+  var state = { view: "dash", q: "", status: "全部", sort: "date", dir: -1, page: 1, size: 10, picked: {} };
+
+  var $view = document.getElementById("view");
+  var $title = document.getElementById("title");
+  var $crumb = document.getElementById("crumb");
+  var $toast = document.getElementById("toast");
+
+  function toast(msg) {
+    $toast.textContent = msg;
+    $toast.classList.add("on");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { $toast.classList.remove("on"); }, 1600);
+  }
+  function money(n) { return "¥" + n.toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+  function filtered() {
+    var q = state.q.trim().toLowerCase();
+    var rows = orders.filter(function (o) {
+      if (state.status !== "全部" && o.status !== state.status) return false;
+      if (!q) return true;
+      return (o.no + o.customer + o.goods).toLowerCase().indexOf(q) !== -1;
+    });
+    var k = state.sort;
+    rows.sort(function (a, b) {
+      var A = a[k], B = b[k];
+      if (typeof A === "string") return A.localeCompare(B) * state.dir;
+      return (A - B) * state.dir;
+    });
+    return rows;
+  }
+
+  /* ---------- 图表 ---------- */
+  function trendSVG() {
+    // 近 14 天销售额
+    var days = [], vals = [];
+    var today = new Date(2026, 8, 30);
+    for (var i = 13; i >= 0; i--) {
+      var d = new Date(today); d.setDate(d.getDate() - i);
+      var key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      days.push(key.slice(5));
+      var sum = 0;
+      orders.forEach(function (o) { if (o.date === key && o.status !== "已取消") sum += o.amount; });
+      vals.push(Math.round(sum));
+    }
+    var w = 640, h = 200, pad = 30;
+    var max = Math.max.apply(null, vals.concat([1000]));
+    var step = (w - pad * 2) / (vals.length - 1);
+    var pts = vals.map(function (v, i) {
+      var x = pad + i * step;
+      var y = h - pad - (v / max) * (h - pad * 2);
+      return [Math.round(x), Math.round(y)];
+    });
+    var line = pts.map(function (p, i) { return (i ? "L" : "M") + p[0] + " " + p[1]; }).join(" ");
+    var area = line + " L" + pts[pts.length - 1][0] + " " + (h - pad) + " L" + pts[0][0] + " " + (h - pad) + " Z";
+    var grid = "";
+    for (var g = 0; g <= 4; g++) {
+      var y = pad + g * ((h - pad * 2) / 4);
+      grid += '<line x1="' + pad + '" y1="' + y + '" x2="' + (w - pad) + '" y2="' + y + '" stroke="#eef1f5"/>';
+    }
+    var labels = pts.map(function (p, i) {
+      if (i % 3 !== 0 && i !== pts.length - 1) return "";
+      return '<text x="' + p[0] + '" y="' + (h - 8) + '" font-size="10" fill="#9aa1ad" text-anchor="middle">' + days[i] + "</text>";
+    }).join("");
+    var dots = pts.map(function (p) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.5" fill="#2563eb"/>'; }).join("");
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto">' +
+      grid +
+      '<path d="' + area + '" fill="rgba(37,99,235,.10)"/>' +
+      '<path d="' + line + '" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round"/>' +
+      dots + labels + "</svg>";
+  }
+
+  function catBars() {
+    var map = {};
+    orders.forEach(function (o) {
+      if (o.status === "已取消") return;
+      map[o.goods] = (map[o.goods] || 0) + o.amount;
+    });
+    var rows = Object.keys(map).map(function (k) { return { k: k, v: map[k] }; })
+      .sort(function (a, b) { return b.v - a.v; }).slice(0, 5);
+    var max = rows.length ? rows[0].v : 1;
+    var colors = ["#2563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"];
+    return '<div class="bars">' + rows.map(function (r, i) {
+      var pct = Math.round((r.v / max) * 100);
+      return '<div class="bar"><span>' + r.k + '</span><span class="track"><i style="width:' + pct + '%;background:' + colors[i % colors.length] + '"></i></span><b>' + Math.round(r.v) + "</b></div>";
+    }).join("") + "</div>";
+  }
+
+  /* ---------- 视图 ---------- */
+  function kpis() {
+    var total = 0, done = 0, pending = 0;
+    orders.forEach(function (o) {
+      if (o.status === "已取消") return;
+      total += o.amount;
+      if (o.status === "已完成") done++;
+      if (o.status === "待付款") pending++;
+    });
+    var cards = [
+      { label: "累计销售额", val: money(total), sub: "较上周期 <span class='up'>+12.4%</span>" },
+      { label: "订单总数", val: orders.length + " 单", sub: "已完成 " + done + " 单" },
+      { label: "待处理订单", val: pending + " 单", sub: "含待付款与已发货" },
+      { label: "库存预警商品", val: "3 项", sub: "低于安全库存" }
+    ];
+    return '<div class="grid kpis">' + cards.map(function (c) {
+      return '<div class="card kpi"><div class="label">' + c.label + '</div><div class="val">' + c.val +
+        '</div><div class="sub">' + c.sub + "</div></div>";
+    }).join("") + "</div>";
+  }
+
+  function tableHTML(rows, opts) {
+    var start = (state.page - 1) * state.size;
+    var page = rows.slice(start, start + state.size);
+    var head = [
+      ["no", "订单号"], ["customer", "客户"], ["goods", "商品"],
+      ["amount", "金额", "num"], ["status", "状态"], ["date", "下单日期"]
+    ];
+    var ths = head.map(function (h) {
+      var arrow = state.sort === h[0] ? (state.dir > 0 ? " ▲" : " ▼") : "";
+      return '<th class="' + (h[2] || "") + '" data-sort="' + h[0] + '">' + h[1] + arrow + "</th>";
+    }).join("");
+    if (opts && opts.check) ths = '<th style="width:34px"></th>' + ths;
+    var trs = page.map(function (o) {
+      var tds = "<td>" + o.no + "</td><td>" + o.customer + "</td><td>" + o.goods + "</td>" +
+        '<td class="num">' + money(o.amount) + "</td>" +
+        '<td><span class="tag t-' + o.status + '">' + o.status + "</span></td><td>" + o.date + "</td>";
+      if (opts && opts.check) {
+        tds = '<td><input type="checkbox" data-pick="' + o.no + '"' + (state.picked[o.no] ? " checked" : "") + "></td>" + tds;
+      }
+      return "<tr>" + tds + "</tr>";
+    }).join("");
+    var body = rows.length
+      ? "<table><thead><tr>" + ths + "</tr></thead><tbody>" + trs + "</tbody></table>"
+      : '<div class="empty">没有符合条件的订单</div>';
+    var pages = Math.max(1, Math.ceil(rows.length / state.size));
+    var pager = '<div class="pager"><span>共 ' + rows.length + " 条 · 第 " + state.page + "/" + pages + ' 页</span>' +
+      '<button data-page="prev"' + (state.page <= 1 ? " disabled" : "") + ">上一页</button>" +
+      '<button data-page="next"' + (state.page >= pages ? " disabled" : "") + ">下一页</button></div>";
+    return body + pager;
+  }
+
+  function toolbar(withBatch) {
+    var opts = ["全部"].concat(STATUS).map(function (s) {
+      return '<option' + (state.status === s ? " selected" : "") + ">" + s + "</option>";
+    }).join("");
+    return '<div class="toolbar">' +
+      '<input type="search" id="q" placeholder="搜索订单号 / 客户 / 商品" value="' + state.q.replace(/"/g, "&quot;") + '">' +
+      '<select id="status">' + opts + "</select>" +
+      (withBatch ? '<button class="btn danger" id="batch"' + (Object.keys(state.picked).length ? "" : " disabled") +
+        ">批量删除" + (Object.keys(state.picked).length ? " (" + Object.keys(state.picked).length + ")" : "") + "</button>" : "") +
+      '<span class="spacer"></span>' +
+      '<button class="btn primary" id="export">导出报表</button>' +
+      "</div>";
+  }
+
+  function render() {
+    var rows = filtered();
+    if (state.view === "dash") {
+      $title.textContent = "数据看板";
+      $crumb.textContent = "首页 / 数据看板";
+      $view.innerHTML = kpis() +
+        '<div class="grid charts">' +
+          '<div class="card"><h2>近 14 天销售额<span>单位：元</span></h2>' + trendSVG() + "</div>" +
+          '<div class="card"><h2>品类销售占比<span>Top 5</span></h2>' + catBars() + "</div>" +
+        "</div>" +
+        '<div class="card" style="margin-top:14px"><h2>最近订单<span>按时间倒序</span></h2>' +
+          tableHTML(rows.slice(0, 60)) + "</div>" +
+        '<p class="note">本页为功能演示，全部数据由前端模拟生成，用于展示后台系统的典型结构与交互。</p>';
+    } else if (state.view === "orders") {
+      $title.textContent = "订单管理";
+      $crumb.textContent = "首页 / 订单管理";
+      $view.innerHTML = '<div class="card">' + toolbar(true) + tableHTML(rows, { check: true }) + "</div>";
+    } else {
+      var names = { goods: "商品管理", customers: "客户管理", stock: "库存管理", settings: "系统设置" };
+      $title.textContent = names[state.view];
+      $crumb.textContent = "首页 / " + names[state.view];
+      $view.innerHTML = '<div class="card placeholder"><b>' + names[state.view] + "</b>" +
+        "该模块为示例占位。完整版本包含增删改查、批量导入导出、操作日志与权限控制。</div>";
+    }
+  }
+
+  /* ---------- 交互 ---------- */
+  document.getElementById("nav").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-view]");
+    if (!b) return;
+    state.view = b.getAttribute("data-view");
+    state.page = 1;
+    Array.prototype.forEach.call(this.children, function (x) { x.classList.remove("on"); });
+    b.classList.add("on");
+    render();
+  });
+
+  $view.addEventListener("click", function (e) {
+    var th = e.target.closest("th[data-sort]");
+    if (th) {
+      var k = th.getAttribute("data-sort");
+      if (state.sort === k) state.dir = -state.dir; else { state.sort = k; state.dir = -1; }
+      render(); return;
+    }
+    var p = e.target.closest("button[data-page]");
+    if (p && !p.disabled) {
+      state.page += (p.getAttribute("data-page") === "next" ? 1 : -1);
+      render(); return;
+    }
+    if (e.target.id === "export") { toast("已导出 " + filtered().length + " 条记录（演示）"); return; }
+    if (e.target.id === "batch") {
+      var n = Object.keys(state.picked).length;
+      orders = orders.filter(function (o) { return !state.picked[o.no]; });
+      state.picked = {}; state.page = 1;
+      toast("已删除 " + n + " 条记录（演示）");
+      render(); return;
+    }
+  });
+
+  $view.addEventListener("input", function (e) {
+    if (e.target.id === "q") { state.q = e.target.value; state.page = 1; render(); }
+  });
+  $view.addEventListener("change", function (e) {
+    if (e.target.id === "status") { state.status = e.target.value; state.page = 1; render(); return; }
+    var pick = e.target.getAttribute("data-pick");
+    if (pick) {
+      if (e.target.checked) state.picked[pick] = 1; else delete state.picked[pick];
+      var b = document.getElementById("batch");
+      if (b) { var n = Object.keys(state.picked).length; b.disabled = !n; b.textContent = n ? "批量删除 (" + n + ")" : "批量删除"; }
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
